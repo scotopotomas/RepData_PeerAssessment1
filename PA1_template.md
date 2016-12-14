@@ -5,7 +5,8 @@ This is the R markdown file for Reproducible Research - Project 1.
 
 Load the necessary libraries.
 
-```{r library, message = FALSE}
+
+```r
 library(readr)
 library(dplyr)
 library(lubridate)
@@ -20,8 +21,21 @@ It also processes the data by creating a data frame called 'dayTotals' which hol
 
 We also create an 'intervalAvg' data frame which holds the average number of steps taken across each interval. 
 
-```{r read}
+
+```r
 raw <- read_csv("C:/Users/Scott Fry/Desktop/Coursera/Reproducible Research/Project 1/activity.csv")
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   steps = col_integer(),
+##   date = col_date(format = ""),
+##   interval = col_integer()
+## )
+```
+
+```r
 dayTotals <- group_by(raw, date) %>% summarize(dailySteps = sum(steps, na.rm=TRUE))
 intervalAvg <- group_by(raw, interval) %>% summarize(avg = mean(steps, na.rm=TRUE))
 ```
@@ -30,36 +44,44 @@ intervalAvg <- group_by(raw, interval) %>% summarize(avg = mean(steps, na.rm=TRU
 
 Next, we create a histogram of the total number of steps taken per day, ignoring any missing values.
 
-```{r histogram}
+
+```r
 ggplot(data = dayTotals, aes(dailySteps)) + geom_histogram(binwidth = 1000) + xlab("Steps per Day") + ylab("Frequency") + ggtitle("Histogram of Steps per Day") + xlim(-1000,25000)
 ```
 
+![plot of chunk histogram](figure/histogram-1.png)
+
 This code calculates the mean and median of the total steps per day.
 
-```{r averages}
+
+```r
 meanStepsPerDay <- mean(dayTotals$dailySteps)
 medianStepsPerDay <- median(dayTotals$dailySteps)
 ```
 
-The mean steps per day is `r formatC(round(meanStepsPerDay,0), big.mark = ",", format="f", drop0trailing = TRUE)`.
+The mean steps per day is 9,354.
 
-The median steps per day is `r formatC(round(medianStepsPerDay,0), big.mark = ",", format="f", drop0trailing = TRUE)`.
+The median steps per day is 10,395.
 
 ##Average Steps per Interval
 
 Here we create a time series plot of the average number of steps taken by interval.
 
-```{r timeSeries}
+
+```r
 plot(intervalAvg$interval, intervalAvg$avg, type="l", xlab = "Interval", ylab = "Average Steps Taken", main = "Average Steps Taken by Interval")
 ```
 
+![plot of chunk timeSeries](figure/timeSeries-1.png)
+
 This code calculates the interval with the highest average steps:
 
-```{r highestAvgInterval}
+
+```r
 highestAvg <- intervalAvg[which.max(intervalAvg$avg),"interval"]
 ```
 
-The 5-minute interval with the highest average steps is `r highestAvg`.  This is the interval between 8:35 AM and 8:40 AM.
+The 5-minute interval with the highest average steps is 835.  This is the interval between 8:35 AM and 8:40 AM.
 
 ##Imputing Missing Values
 
@@ -69,15 +91,17 @@ For all 10 of the days we consider missing, the steps for each interval will be 
 
 This code calculates the number of missing values in the dataset (in this case rows with NA in the value for steps):
 
-```{r missingCount}
+
+```r
 numMissing <- sum(complete.cases(raw) == FALSE)
 ```
 
-The total number of rows with missing values in the dataset is: `r numMissing`.
+The total number of rows with missing values in the dataset is: 2304.
 
 The code below imputes steps values for missing intervals with the mean for that interval in non-missing days.
 
-```{r impute}
+
+```r
 imputed <- raw
 imputed[raw$date == ymd("2012-10-02") | raw$date == ymd("2012-11-15"),"steps"] <- NA
 
@@ -90,20 +114,24 @@ dayTotalsImputed <- group_by(imputed, date) %>% summarize(dailySteps = sum(steps
 
 This code creates the same histogram of the total number of steps taken per day, but using imputed values for the missing data.
 
-```{r histogramImputed}
+
+```r
 ggplot(data = dayTotalsImputed, aes(dailySteps)) + geom_histogram(binwidth = 1000) + xlab("Steps per Day") + ylab("Frequency") + ggtitle("Histogram of Steps per Day (Imputed Data)") + xlim(-1000,25000)
 ```
 
+![plot of chunk histogramImputed](figure/histogramImputed-1.png)
+
 This code calculates the mean and median of the total steps per day using the imputed values for the missing data.
 
-```{r averagesImputed}
+
+```r
 meanStepsPerDayImputed <- mean(dayTotalsImputed$dailySteps)
 medianStepsPerDayImputed <- median(dayTotalsImputed$dailySteps)
 ```
 
-The mean steps per day (with imputed data) is `r formatC(round(meanStepsPerDayImputed,0), big.mark = ",", format="f", drop0trailing = TRUE)`.
+The mean steps per day (with imputed data) is 11,116.
 
-The median steps per day (with imputed data) is `r formatC(round(medianStepsPerDayImputed,0), big.mark = ",", format="f", drop0trailing = TRUE)`.
+The median steps per day (with imputed data) is 10,766.
 
 The mean and median steps per day using imputed data are higher than the original values which excluded the missing data. The mean increased because we counted the days with very few records as missing data, they were decreasing the average when they were included as valid data.  The median increased because all of the replaced mean values were higher than the previous median.
 
@@ -111,10 +139,13 @@ The mean and median steps per day using imputed data are higher than the origina
 
 The following creates a new factor variable, 'dayType', which has the value of "weekend" or "weekday".  It also produces a panel plot showing the average steps taken in each time interval for weekdays vs. weekends.
 
-```{r daytype}
+
+```r
 imputed$dayType <- ifelse(weekdays(imputed$date) %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"), "weekday", "weekend")
 
 intervalAvgDayType <- group_by(imputed, dayType, interval) %>% summarize(avg = mean(steps, na.rm=TRUE))
 
 ggplot(data = intervalAvgDayType, aes(x = interval, y = avg)) + geom_line() + facet_grid(dayType ~ .) + xlab("Interval") + ylab("Number of Steps") + ggtitle("Average Steps by Time in Weekdays vs. Weekends") + theme_bw()
 ```
+
+![plot of chunk daytype](figure/daytype-1.png)
